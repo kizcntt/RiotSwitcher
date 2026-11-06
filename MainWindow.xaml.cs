@@ -13,12 +13,12 @@ using System.Windows.Threading;
 using Microsoft.Win32;
 using System.Security.Principal;
 
-namespace RiotSwitcher // ĐỔI LẠI THÀNH NAMESPACE CỦA BẠN NẾU KHÁC
+namespace RiotSwitcher 
 {
     public enum AppState
     {
-        Idle,       // Rảnh rỗi (cho phép timer quét)
-        LoggingIn   // Đang kẹt xử lý login (khóa timer)
+        Idle,       
+        LoggingIn   
     }
     public class AccountModel
     {
@@ -50,6 +50,7 @@ namespace RiotSwitcher // ĐỔI LẠI THÀNH NAMESPACE CỦA BẠN NẾU KHÁC
         private const string RankCacheFile = "rank_cache.json";
         private Dictionary<string, RankCacheItem> _rankCache = new Dictionary<string, RankCacheItem>();
         private AppState _currentState = AppState.Idle;
+        private static readonly HttpClient _httpClient = new HttpClient();
 
         private List<AccountModel> _accounts = new();
         private bool _isEditing = false;
@@ -66,10 +67,10 @@ namespace RiotSwitcher // ĐỔI LẠI THÀNH NAMESPACE CỦA BẠN NẾU KHÁC
             }
 
             InitializeComponent();
-            Task.Delay(1000);
+            Thread.Sleep(500);
             InitializeSettings();
             LoadAccounts();
-            LoadAllRanksAsync();
+            _ = LoadAllRanksAsync();
             InitProcessCheckTimer();
         }
 
@@ -221,43 +222,79 @@ namespace RiotSwitcher // ĐỔI LẠI THÀNH NAMESPACE CỦA BẠN NẾU KHÁC
         private async Task LoadAllRanksAsync()
         {
             LoadRankCache();
-            // Duyệt qua từng tài khoản trong danh sách
+
+            // BƯỚC 1: LẤY TỪ CACHE RA ĐỌC TRƯỚC (HIỆN NGAY LẬP TỨC TRONG 1ms)
             foreach (var acc in _accounts)
             {
-                // Bỏ qua nếu acc chưa có Tên In-game (ví dụ user mới thêm chưa login lần nào)
                 if (!acc.DisplayName.Contains("#"))
                 {
                     acc.Rank = "Unranked";
-                    acc.RankColor = "#585B70"; // Unranked (Xám tối)
+                    acc.RankColor = "#585B70";
                     continue;
                 }
 
-                await Task.Delay(400);
-                string currentRank = await GetRankFromTrackerAsync(acc.DisplayName);
-
-                acc.Rank = currentRank;
-
-                // Tùy biến màu theo Rank
-                if (currentRank.Contains("Iron") || currentRank.Contains("Bronze") || currentRank.Contains("Silver") ) 
-                    acc.RankColor = "#A6ADC8"; // Màu Xám
-                else if (currentRank.Contains("Gold"))
-                    acc.RankColor = "#F9E2AF"; // Màu Vàng
-                else if (currentRank.Contains("Platinum"))
-                    acc.RankColor = "#89B4FA"; // Màu Xanh dương
-                else if (currentRank.Contains("Diamond"))
-                    acc.RankColor = "#CBA6F7"; // Màu Tím
-                else if (currentRank.Contains("Ascendant"))
-                    acc.RankColor = "#A6E3A1"; // Màu Xanh lá
-                else if (currentRank.Contains("Immortal"))
-                    acc.RankColor = "#F38BA8"; // Màu Đỏ
-                else if (currentRank.Contains("Radiant"))
-                    acc.RankColor = "#FAB387"; // Màu Cam rực cháy
+                if (_rankCache.TryGetValue(acc.DisplayName, out var cachedData))
+                {
+                    acc.Rank = cachedData.Rank;
+                    acc.RankColor = GetRankColor(cachedData.Rank);
+                }
                 else
-                    acc.RankColor = "#585B70"; // Mặc định Xám nếu không xác định được Rank
-
-                // Ép giao diện F5 lại để hiện Rank mới lên 
+                {
+                    acc.Rank = "Loading...";
+                    acc.RankColor = "#A6ADC8";
+                }
             }
+
             LstAccounts.Items.Refresh();
+
+            // BƯỚC 2: CHẠY NGẦM ĐỂ CẬP NHẬT RANK TỪ API KHI HẾT HẠN
+            bool hasUpdate = false;
+            foreach (var acc in _accounts)
+            {
+                if (!acc.DisplayName.Contains("#")) continue;
+
+                // Nếu cache vẫn còn hạn (Expire > DateTime.Now) thì BỎ QUA
+                if (_rankCache.TryGetValue(acc.DisplayName, out var cachedData) && DateTime.Now < cachedData.ExpireTime)
+                {
+                    continue;
+                }
+
+                // Cache hết hạn hoặc chưa có cache -> Mới gọi API
+                string newRank = await GetRankFromTrackerAsync(acc.DisplayName);
+
+                if (acc.Rank != newRank)
+                {
+                    acc.Rank = newRank;
+                    acc.RankColor = GetRankColor(newRank);
+                    hasUpdate = true;
+                    LstAccounts.Items.Refresh(); // Cập nhật từng dòng khi có rank mới
+                }
+            }
+
+            if (hasUpdate)
+            {
+                LstAccounts.Items.Refresh();
+            }
+        }
+
+        // Tách hàm lấy màu rank ra riêng cho gọn code
+        private string GetRankColor(string currentRank)
+        {
+            if (currentRank.Contains("Iron") || currentRank.Contains("Bronze") || currentRank.Contains("Silver"))
+                return "#A6ADC8";
+            if (currentRank.Contains("Gold"))
+                return "#F9E2AF";
+            if (currentRank.Contains("Platinum"))
+                return "#89B4FA";
+            if (currentRank.Contains("Diamond"))
+                return "#CBA6F7";
+            if (currentRank.Contains("Ascendant"))
+                return "#A6E3A1";
+            if (currentRank.Contains("Immortal"))
+                return "#F38BA8";
+            if (currentRank.Contains("Radiant"))
+                return "#FAB387";
+            return "#585B70";
         }
 
         private void LoadRankCache()
@@ -285,7 +322,7 @@ namespace RiotSwitcher // ĐỔI LẠI THÀNH NAMESPACE CỦA BẠN NẾU KHÁC
 
         private async Task<string> GetRankFromTrackerAsync(string riotId)
         {
-            // 1. KIỂM TRA BỘ NHỚ ĐỆM (CACHE) 30 PHÚT
+            // 1. CACHE 30 PHÚT
             if (_rankCache.TryGetValue(riotId, out var cachedData))
             {
                 if (DateTime.Now < cachedData.ExpireTime)
@@ -300,14 +337,13 @@ namespace RiotSwitcher // ĐỔI LẠI THÀNH NAMESPACE CỦA BẠN NẾU KHÁC
             string tag = parts[1];
             string finalRank = "Unranked";
             await Task.Delay(1000); // Delay 1.0 giây để tránh spam API quá nhanh
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "RiotAccountSwitcher_Project");
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "RiotAccountSwitcher_Project");
 
             // 2. LỚP 1: GỌI KYROSKOH (Nhanh, không cần Key)
             try
             {
                 string urlKyros = $"https://api.kyroskoh.xyz/valorant/v1/mmr/ap/{name}/{tag}?show=rankonly&display=0";
-                var resKyros = await client.GetAsync(urlKyros);
+                var resKyros = await _httpClient.GetAsync(urlKyros);
 
                 if (resKyros.IsSuccessStatusCode)
                 {
@@ -368,7 +404,7 @@ namespace RiotSwitcher // ĐỔI LẠI THÀNH NAMESPACE CỦA BẠN NẾU KHÁC
 
         public static class CryptoHelper
         {
-            // Chìa khóa bí mật dùng để XOR (bạn có thể đổi thành tên bạn cho ngầu)
+            // Chìa khóa bí mật dùng để XOR
             private const string SecretKey = "riotShuAkashi";
 
             public static string Encrypt(string plainText)
@@ -395,14 +431,12 @@ namespace RiotSwitcher // ĐỔI LẠI THÀNH NAMESPACE CỦA BẠN NẾU KHÁC
                 if (string.IsNullOrEmpty(encodedText)) return string.Empty;
                 try
                 {
-                    // Bước 1: Lột lớp bọc Base64
+                    
                     byte[] bytes = Convert.FromBase64String(encodedText);
                     char[] chars = Encoding.UTF8.GetString(bytes).ToCharArray();
 
-                    // Bước 2: Đảo ngược chuỗi về lại chiều thuận
                     Array.Reverse(chars);
 
-                    // Bước 3: Giải mã XOR (phép XOR có tính chất đảo nghịch, XOR lần 2 sẽ ra bản gốc)
                     char[] original = new char[chars.Length];
                     for (int i = 0; i < chars.Length; i++)
                     {
@@ -555,7 +589,6 @@ namespace RiotSwitcher // ĐỔI LẠI THÀNH NAMESPACE CỦA BẠN NẾU KHÁC
                         string gameName = nameEl.GetString();
                         string gameTag = tagEl.GetString();
 
-                        // Lúc Riot đang quay mòng mòng đăng nhập, API vẫn trả 200 OK nhưng name sẽ rỗng
                         if (!string.IsNullOrEmpty(gameName))
                         {
                             debugLog($"Current Riot ID: {gameName}#{gameTag}");
@@ -645,7 +678,7 @@ namespace RiotSwitcher // ĐỔI LẠI THÀNH NAMESPACE CỦA BẠN NẾU KHÁC
 
                     if (isFocused)
                     {
-                        // Khi chắc kèo 100% cửa sổ đang nằm chình ình trên màn hình mới bắt đầu gõ
+
                         var userBox = riotWindow.FindFirstDescendant(cf => cf.ByAutomationId("username"))?.AsTextBox();
                         for (int i = 0; i < 20; i++)
                         {
