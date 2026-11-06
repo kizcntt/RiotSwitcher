@@ -40,7 +40,7 @@ A fast, lightweight, and safe account switcher for Riot Games (Valorant / League
 
 ### 1. Installation (Pre-built Binaries)
 
-1. Download the latest installer (`RiotSwitcher_Setup_vX.X.X.exe`) from the [Releases](https://github.com/your-username/RiotSwitcher/releases) page.
+1. Download the latest installer (`RiotSwitcher_Setup_vX.X.X.exe`) from the [Releases](https://github.com/kizcntt/RiotSwitcher/releases) page.
 2. Run the installer as Administrator.
 3. On first launch, if Riot Client is not currently running, select your local path to `RiotClientServices.exe`.
 4. Enter your credentials, click **Save**, and select any account to switch seamlessly.
@@ -49,7 +49,7 @@ A fast, lightweight, and safe account switcher for Riot Games (Valorant / League
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/RiotSwitcher.git
+git clone https://github.com/kizcntt/RiotSwitcher.git
 
 # Navigate to project root
 cd RiotSwitcher
