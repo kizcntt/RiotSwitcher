@@ -1,0 +1,334 @@
+﻿<Window x:Class="RiotSwitcher.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:RiotSwitcher"
+        mc:Ignorable="d"
+        Title="Riot Account Switcher" Height="480" Width="800"
+        Icon="logo.ico"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <!-- Style cũ của bạn -->
+        <Style TargetType="Button" x:Key="BaseButtonStyle">
+            <Setter Property="Background" Value="#313244"/>
+            <Setter Property="Foreground" Value="#CDD6F4"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#45475A"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.4"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="#1E1E2E"/>
+            <Setter Property="Foreground" Value="#CDD6F4"/>
+            <Setter Property="BorderBrush" Value="#45475A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,5"/>
+        </Style>
+
+        <Style TargetType="PasswordBox">
+            <Setter Property="Background" Value="#1E1E2E"/>
+            <Setter Property="Foreground" Value="#CDD6F4"/>
+            <Setter Property="BorderBrush" Value="#45475A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,5"/>
+        </Style>
+
+        <!-- Style DÀNH RIÊNG cho nút Minimize & Close trên Top Bar -->
+        <Style x:Key="WindowControlButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#A6ADC8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#313244"/>
+                    <Setter Property="Foreground" Value="#CDD6F4"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="WindowCloseButton" TargetType="Button" BasedOn="{StaticResource WindowControlButton}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <!-- Bo đúng góc trên cùng bên phải để lúc hover không bị lòi ra ngoài form -->
+                        <Border Background="{TemplateBinding Background}" CornerRadius="0,7,0,0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F38BA8"/>
+                    <!-- Đỏ pastel -->
+                    <Setter Property="Foreground" Value="#11111B"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <!-- Style làm mảnh Thumb (thanh trượt) -->
+    <Style x:Key="SlimScrollThumb" TargetType="{x:Type Thumb}">
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="IsTabStop" Value="False"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Thumb}">
+                    <!-- Độ rộng thanh trượt: 5px, bo tròn góc cho hiện đại -->
+                    <Border CornerRadius="3"
+                            Background="#555555"
+                            Width="5"
+                            HorizontalAlignment="Center" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Style cho ScrollBar dọc -->
+    <Style x:Key="SlimScrollBar" TargetType="{x:Type ScrollBar}">
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <!-- Độ rộng tổng thể của rãnh cuộn (8px) -->
+        <Setter Property="Width" Value="8"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ScrollBar}">
+                    <Grid Background="Transparent">
+                        <Track x:Name="PART_Track" IsDirectionReversed="True">
+                            <Track.Thumb>
+                                <Thumb Style="{StaticResource SlimScrollThumb}"/>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+        <Style x:Key="SlimThumb" TargetType="{x:Type Thumb}">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <!-- Bề rộng thanh trượt 5px, màu xám nhạt tối giản, bo góc -->
+                        <Border Background="#555B6E" 
+                            CornerRadius="2.5" 
+                            Width="5" 
+                            HorizontalAlignment="Center"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 2. Ghi đè toàn bộ ControlTemplate của ScrollBar dọc -->
+        <Style TargetType="{x:Type ScrollBar}">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Vertical">
+                    <!-- Chiều rộng tổng thể của rãnh trượt: chỉ 6px (thay vì 17px mặc định) -->
+                    <Setter Property="Width" Value="6"/>
+                    <Setter Property="Height" Value="Auto"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type ScrollBar}">
+                                <!-- Rãnh trượt trong suốt, hoàn toàn bỏ 2 nút mũi tên -->
+                                <Grid Background="Transparent">
+                                    <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                        <Track.Thumb>
+                                            <Thumb Style="{StaticResource SlimThumb}"/>
+                                        </Track.Thumb>
+                                    </Track>
+                                </Grid>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <!-- Khung viền Master bao trọn toàn bộ App (Bo góc + Viền 1px) -->
+    <Border Background="#11111B" CornerRadius="8" BorderBrush="#313244" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="35"/>
+                <!-- Dành 35px cho Top Bar -->
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- CUSTOM TOP BAR -->
+            <Grid Grid.Row="0" Background="Transparent" MouseLeftButtonDown="TopBar_MouseLeftButtonDown">
+                <TextBlock Text="RIOT ACCOUNT SWITCHER" Foreground="#585B70" FontWeight="Bold" FontSize="11" 
+                           VerticalAlignment="Center" Margin="15,0,0,0"/>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="—" Width="45" FontSize="14" FontWeight="Bold" Style="{StaticResource WindowControlButton}" Click="BtnMinimize_Click"/>
+                    <Button Content="✕" Width="45" FontSize="12" Style="{StaticResource WindowCloseButton}" Click="BtnClose_Click"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- PHẦN RUỘT APP CỦA BẠN (Đẩy xuống Grid.Row=1) -->
+            <Grid Grid.Row="1" Margin="15,0,15,15">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Header -->
+                <DockPanel Grid.Row="0" Margin="0,0,0,15">
+                    <TextBlock FontSize="18" FontWeight="Bold" Foreground="#89B4FA" Text="⚡ Riot Account Switcher" VerticalAlignment="Center"/>
+                    <CheckBox Content="Start Tracker (Overwolf)" Foreground="#A6ADC8" HorizontalAlignment="Right" IsChecked="False" VerticalAlignment="Center" x:Name="ChkTracker"/>
+                </DockPanel>
+
+                <!-- Main Content -->
+                <Grid Grid.Row="1" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.1*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Cột Trái: Danh sách -->
+                    <Border Background="#1E1E2E" BorderBrush="#313244" BorderThickness="1" CornerRadius="8" Grid.Column="0" Padding="12">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <!-- Tiêu đề -->
+                                <RowDefinition Height="Auto"/>
+                                <!-- Header của Bảng -->
+                                <RowDefinition Height="*"/>
+                                <!-- ListBox -->
+                                <RowDefinition Height="Auto"/>
+                                <!-- Buttons -->
+                            </Grid.RowDefinitions>
+
+                            <TextBlock FontWeight="SemiBold" Foreground="#A6ADC8" Grid.Row="0" Margin="0,0,0,12" Text="Chọn tài khoản:"/>
+
+
+                            <!-- LISTBOX CUSTOM THÀNH TABLE -->
+                            <ListBox Background="Transparent" BorderThickness="0" Foreground="#CDD6F4" Grid.Row="2" Margin="0,0,0,10" 
+                                     SelectionChanged="LstAccounts_SelectionChanged" x:Name="LstAccounts" 
+                                     HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+
+                                <!-- Custom hiệu ứng khi di chuột và chọn item cho giống Table xịn -->
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Padding" Value="5,8"/>
+                                        <Setter Property="Margin" Value="0,2"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="Bd" Property="Background" Value="#313244"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsSelected" Value="True">
+                                                            <Setter TargetName="Bd" Property="Background" Value="#45475A"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+
+                                <!-- Cấu trúc 2 cột cho mỗi dòng -->
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="80"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Cột 1: Tên In-game -->
+                                            <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="13"/>
+
+                                            <!-- Cột 2: Rank (Đổi màu vàng cho nổi) -->
+                                            <TextBlock Grid.Column="1" Text="{Binding Rank}" Foreground="{Binding RankColor}" FontSize="12" 
+                                                       HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <StackPanel Grid.Row="3" HorizontalAlignment="Right" Orientation="Horizontal">
+                                <Button Style="{StaticResource BaseButtonStyle}" Background="#A6E3A1" Click="BtnSelect_Click" Content="Đăng nhập" Foreground="#11111B" IsEnabled="False" Margin="0,0,8,0" Width="90" x:Name="BtnSelect"/>
+                                <Button Style="{StaticResource BaseButtonStyle}" Click="BtnEdit_Click" Content="Sửa" IsEnabled="False" Margin="0,0,8,0" Width="60" x:Name="BtnEdit"/>
+                                <Button Style="{StaticResource BaseButtonStyle}" Background="#F38BA8" Click="BtnDelete_Click" Content="Xóa" Foreground="#11111B" IsEnabled="False" Width="60" x:Name="BtnDelete"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Cột Phải: Form nhập liệu -->
+                    <Border Background="#1E1E2E" BorderBrush="#313244" BorderThickness="1" CornerRadius="8" Grid.Column="2" Padding="12">
+                        <StackPanel>
+                            <TextBlock FontWeight="SemiBold" Foreground="#89B4FA" Margin="0,0,0,12" Text="Thêm tài khoản mới" x:Name="LblFormTitle"/>
+
+                            <TextBlock FontSize="12" Foreground="#A6ADC8" Margin="0,0,0,4" Text="Display Name:"/>
+                            <TextBox Margin="0,0,0,10" x:Name="TxtDisplayName" IsReadOnly="True" Opacity="0.7"/>
+
+                            <TextBlock FontSize="12" Foreground="#A6ADC8" Margin="0,0,0,4" Text="Username:"/>
+                            <TextBox Margin="0,0,0,10" x:Name="TxtUsername"/>
+
+                            <TextBlock FontSize="12" Foreground="#A6ADC8" Margin="0,0,0,4" Text="Password:"/>
+                            <PasswordBox Margin="0,0,0,15" x:Name="TxtPassword"/>
+
+                            <Button Style="{StaticResource BaseButtonStyle}" Background="#89B4FA" Click="BtnSave_Click" Content="Lưu tài khoản" Foreground="#11111B" Height="34" x:Name="BtnSave"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Status Bar -->
+                <!-- Bỏ bớt background chỗ này vì toàn app đã là màu #11111B, dùng Border trong suốt cho thanh thoát -->
+                <Border Background="Transparent" BorderBrush="#313244" BorderThickness="1" CornerRadius="6" Grid.Row="2" Padding="10,6">
+                    <DockPanel>
+                        <TextBlock FontWeight="Bold" Foreground="#A6ADC8" Margin="0,0,8,0" Text="Trạng thái:"/>
+                        <TextBlock Foreground="#FAB387" Text="Đang khởi động..." x:Name="TxtStatus"/>
+                    </DockPanel>
+                </Border>
+            </Grid>
+            <TextBlock Text="Developed by Shu Akashi  " 
+                   Foreground="#7F849C" 
+                   FontSize="11" 
+                   FontWeight="SemiBold"
+                   HorizontalAlignment="Right" 
+                   VerticalAlignment="Bottom" 
+                   Margin="0,0,15,60" Grid.Row="1" />
+        </Grid>
+    </Border>
+</Window>
