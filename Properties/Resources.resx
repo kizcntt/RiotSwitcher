@@ -1,0 +1,209 @@
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitle" xml:space="preserve">
+    <value>RIOT ACCOUNT SWITCHER</value>
+  </data>
+  <data name="HeaderTitle" xml:space="preserve">
+    <value>Riot Account Switcher</value>
+  </data>
+  <data name="SelectAccount" xml:space="preserve">
+    <value>Chọn tài khoản:</value>
+  </data>
+  <data name="Login" xml:space="preserve">
+    <value>Đăng nhập</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>Sửa</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Xóa</value>
+  </data>
+  <data name="AddAccount" xml:space="preserve">
+    <value>Thêm tài khoản mới</value>
+  </data>
+  <data name="UpdateAccount" xml:space="preserve">
+    <value>Cập nhật tài khoản</value>
+  </data>
+  <data name="DisplayName" xml:space="preserve">
+    <value>Tên hiển thị:</value>
+  </data>
+  <data name="Username" xml:space="preserve">
+    <value>Username:</value>
+  </data>
+  <data name="Password" xml:space="preserve">
+    <value>Password:</value>
+  </data>
+  <data name="SaveAccount" xml:space="preserve">
+    <value>Lưu tài khoản</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Trạng thái:</value>
+  </data>
+  <data name="Starting" xml:space="preserve">
+    <value>Đang khởi động...</value>
+  </data>
+  <data name="WaitingRiotClient" xml:space="preserve">
+    <value>Đang chờ Riot Client...</value>
+  </data>
+  <data name="RiotClientRunning" xml:space="preserve">
+    <value>Riot Client đang chạy</value>
+  </data>
+  <data name="ValorantRunning" xml:space="preserve">
+    <value>Valorant đang chạy</value>
+  </data>
+  <data name="ProcessingLogin" xml:space="preserve">
+    <value>Đang xử lý đăng nhập...</value>
+  </data>
+  <data name="LoggedInWaiting" xml:space="preserve">
+    <value>Đã đăng nhập! Đang chờ lấy thông tin...</value>
+  </data>
+  <data name="Loading" xml:space="preserve">
+    <value>Đang tải dữ liệu...</value>
+  </data>
+  <data name="Unranked" xml:space="preserve">
+    <value>Unranked</value>
+  </data>
+  <data name="InsufficientPermissions" xml:space="preserve">
+    <value>Vui lòng chạy ứng dụng với quyền Administrator.</value>
+  </data>
+  <data name="InsufficientPermissionsTitle" xml:space="preserve">
+    <value>Thiếu quyền</value>
+  </data>
+  <data name="FirstRun" xml:space="preserve">
+    <value>Đây là lần chạy đầu tiên!
+Tool không tìm thấy Riot Client đang mở.
+
+Vui lòng chọn đường dẫn tới file RiotClientServices.exe của bạn.</value>
+  </data>
+  <data name="InitialSetup" xml:space="preserve">
+    <value>Thiết lập ban đầu</value>
+  </data>
+  <data name="SelectRiotClient" xml:space="preserve">
+    <value>Chọn đường dẫn Riot Client</value>
+  </data>
+  <data name="RequiredPath" xml:space="preserve">
+    <value>Bạn bắt buộc phải chọn đường dẫn để sử dụng tool. Ứng dụng sẽ thoát.</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>Lỗi</value>
+  </data>
+  <data name="ConfirmDelete" xml:space="preserve">
+    <value>Xóa {0}?</value>
+  </data>
+  <data name="Confirm" xml:space="preserve">
+    <value>Xác nhận</value>
+  </data>
+  <data name="Completed" xml:space="preserve">
+    <value>Hoàn tất: {0}</value>
+  </data>
+  <data name="AppTitle_EN" xml:space="preserve">
+    <value>RIOT ACCOUNT SWITCHER</value>
+  </data>
+  <data name="HeaderTitle_EN" xml:space="preserve">
+    <value> Riot Account Switcher</value>
+  </data>
+  <data name="StartTracker_EN" xml:space="preserve">
+    <value>Start Tracker (Overwolf)</value>
+  </data>
+  <data name="SelectAccount_EN" xml:space="preserve">
+    <value>Select account:</value>
+  </data>
+  <data name="Login_EN" xml:space="preserve">
+    <value>Log in</value>
+  </data>
+  <data name="Edit_EN" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Delete_EN" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="AddAccount_EN" xml:space="preserve">
+    <value>Add new account</value>
+  </data>
+  <data name="UpdateAccount_EN" xml:space="preserve">
+    <value>Update account</value>
+  </data>
+  <data name="DisplayName_EN" xml:space="preserve">
+    <value>Display Name:</value>
+  </data>
+  <data name="Username_EN" xml:space="preserve">
+    <value>Username:</value>
+  </data>
+  <data name="Password_EN" xml:space="preserve">
+    <value>Password:</value>
+  </data>
+  <data name="SaveAccount_EN" xml:space="preserve">
+    <value>Save account</value>
+  </data>
+  <data name="Status_EN" xml:space="preserve">
+    <value>Status:</value>
+  </data>
+  <data name="Starting_EN" xml:space="preserve">
+    <value>Starting...</value>
+  </data>
+  <data name="WaitingRiotClient_EN" xml:space="preserve">
+    <value>Waiting for Riot Client...</value>
+  </data>
+  <data name="RiotClientRunning_EN" xml:space="preserve">
+    <value>Riot Client is running</value>
+  </data>
+  <data name="ValorantRunning_EN" xml:space="preserve">
+    <value>Valorant is running</value>
+  </data>
+  <data name="ProcessingLogin_EN" xml:space="preserve">
+    <value>Processing login...</value>
+  </data>
+  <data name="LoggedInWaiting_EN" xml:space="preserve">
+    <value>Logged in! Waiting for account information...</value>
+  </data>
+  <data name="Loading_EN" xml:space="preserve">
+    <value>Loading...</value>
+  </data>
+  <data name="Unranked_EN" xml:space="preserve">
+    <value>Unranked</value>
+  </data>
+  <data name="InsufficientPermissions_EN" xml:space="preserve">
+    <value>Please run the application as Administrator.</value>
+  </data>
+  <data name="InsufficientPermissionsTitle_EN" xml:space="preserve">
+    <value>Insufficient permissions</value>
+  </data>
+  <data name="FirstRun_EN" xml:space="preserve">
+    <value>This is the first run!
+Riot Client was not found running.
+
+Please select the path to your RiotClientServices.exe file.</value>
+  </data>
+  <data name="InitialSetup_EN" xml:space="preserve">
+    <value>Initial setup</value>
+  </data>
+  <data name="SelectRiotClient_EN" xml:space="preserve">
+    <value>Select Riot Client path</value>
+  </data>
+  <data name="RequiredPath_EN" xml:space="preserve">
+    <value>You must select a path to use this tool. The application will exit.</value>
+  </data>
+  <data name="Error_EN" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="ConfirmDelete_EN" xml:space="preserve">
+    <value>Delete {0}?</value>
+  </data>
+  <data name="Confirm_EN" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="Completed_EN" xml:space="preserve">
+    <value>Completed: {0}</value>
+  </data>
+</root>

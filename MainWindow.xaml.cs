@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 using Microsoft.Win32;
 using System.Security.Principal;
@@ -60,8 +61,8 @@ namespace RiotSwitcher
         {
             if (!IsAdministrator())
             {
-                MessageBox.Show("Vui lòng click chuột phải vào Tool -> Chọn 'Run as administrator' để có thể điều khiển được Riot Client!",
-                                "Thiếu quyền", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(Localization.Get("InsufficientPermissions"),
+                                Localization.Get("InsufficientPermissionsTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
                 System.Windows.Application.Current.Shutdown();
                 return;
             }
@@ -102,15 +103,27 @@ namespace RiotSwitcher
             Close();
         }
 
+        private void LanguageRadio_Checked(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.RadioButton radioButton && radioButton.Tag is string language)
+            {
+                Localization.SetLanguage(language);
+                if (LblFormTitle != null)
+                {
+                    LblFormTitle.Text = Localization.Get(_isEditing ? "UpdateAccount" : "AddAccount");
+                }
+            }
+        }
+
         private void InitProcessCheckTimer()
         {
             _processTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(2000) };
             _processTimer.Tick += (s, e) =>
             {
                 if (_currentState != AppState.Idle) return;
-                if (Process.GetProcessesByName("VALORANT").Length > 0) TxtStatus.Text = "Valorant is running";
-                else if (Process.GetProcessesByName("RiotClientServices").Length > 0) TxtStatus.Text = "Riot Client is running";
-                else TxtStatus.Text = "Waiting Riot Client...";
+                if (Process.GetProcessesByName("VALORANT").Length > 0) TxtStatus.Text = Localization.Get("ValorantRunning");
+                else if (Process.GetProcessesByName("RiotClientServices").Length > 0) TxtStatus.Text = Localization.Get("RiotClientRunning");
+                else TxtStatus.Text = Localization.Get("WaitingRiotClient");
             };
             _processTimer.Start();
         }
@@ -149,12 +162,12 @@ namespace RiotSwitcher
             // 3. NẾU PROCESS KHÔNG CHẠY -> MỞ DIALOG BẮT NGƯỜI DÙNG CHỌN
             if (string.IsNullOrEmpty(_riotClientPath) || !File.Exists(_riotClientPath))
             {
-                MessageBox.Show("Đây là lần chạy đầu tiên!\nTool không tìm thấy Riot Client đang mở.\n\nVui lòng chọn đường dẫn tới file RiotClientServices.exe của bạn.",
-                                "Thiết lập ban đầu", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(Localization.Get("FirstRun"),
+                                Localization.Get("InitialSetup"), MessageBoxButton.OK, MessageBoxImage.Information);
 
                 OpenFileDialog openFileDialog = new OpenFileDialog();
                 openFileDialog.Filter = "Riot Client (RiotClientServices.exe)|RiotClientServices.exe";
-                openFileDialog.Title = "Chọn đường dẫn Riot Client";
+                openFileDialog.Title = Localization.Get("SelectRiotClient");
 
                 if (openFileDialog.ShowDialog() == true)
                 {
@@ -163,7 +176,7 @@ namespace RiotSwitcher
                 else
                 {
                     // Nếu người dùng bấm Cancel, không cho dùng Tool nữa
-                    MessageBox.Show("Bạn bắt buộc phải chọn đường dẫn để sử dụng tool. Ứng dụng sẽ thoát.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(Localization.Get("RequiredPath"), Localization.Get("Error"), MessageBoxButton.OK, MessageBoxImage.Error);
                     System.Windows.Application.Current.Shutdown();
                     return;
                 }
@@ -228,7 +241,7 @@ namespace RiotSwitcher
             {
                 if (!acc.DisplayName.Contains("#"))
                 {
-                    acc.Rank = "Unranked";
+                    acc.Rank = Localization.Get("Unranked");
                     acc.RankColor = "#585B70";
                     continue;
                 }
@@ -240,7 +253,7 @@ namespace RiotSwitcher
                 }
                 else
                 {
-                    acc.Rank = "Loading...";
+                    acc.Rank = Localization.Get("Loading");
                     acc.RankColor = "#A6ADC8";
                 }
             }
@@ -466,7 +479,7 @@ namespace RiotSwitcher
             TxtDisplayName.Text = TxtUsername.Text = TxtPassword.Password = "";
             TxtDisplayName.IsEnabled = true;
             _isEditing = false;
-            LblFormTitle.Text = "Thêm tài khoản mới";
+            LblFormTitle.Text = Localization.Get("AddAccount");
             BtnSelect.IsEnabled = BtnEdit.IsEnabled = BtnDelete.IsEnabled = false;
         }
 
@@ -520,13 +533,13 @@ namespace RiotSwitcher
                 TxtUsername.Text = acc.Username;
                 TxtPassword.Password = CryptoHelper.Decrypt(acc.Password);
                 _isEditing = true;
-                LblFormTitle.Text = "Cập nhật tài khoản";
+                LblFormTitle.Text = Localization.Get("UpdateAccount");
             }
         }
 
         private void BtnDelete_Click(object sender, RoutedEventArgs e)
         {
-            if (LstAccounts.SelectedItem is AccountModel acc && MessageBox.Show($"Xóa {acc.DisplayName}?", "Xác nhận", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+            if (LstAccounts.SelectedItem is AccountModel acc && MessageBox.Show(Localization.Get("ConfirmDelete", acc.DisplayName), Localization.Get("Confirm"), MessageBoxButton.YesNo) == MessageBoxResult.Yes)
             {
                 _accounts.Remove(acc);
                 SaveAccountsToFile();
@@ -558,7 +571,7 @@ namespace RiotSwitcher
 
         private async Task<string> GetCurrentRiotIdAsync()
         {
-            if (!File.Exists(_lockfilePath)) return "Chưa mở Riot Client";
+            if (!File.Exists(_lockfilePath)) return Localization.Get("WaitingRiotClient");
             try
             {
                 // Vẫn bài cũ: Đọc ké lockfile để lấy Port và Password
@@ -567,7 +580,7 @@ namespace RiotSwitcher
                 string lockContent = await sr.ReadToEndAsync();
 
                 string[] parts = lockContent.Split(':');
-                if (parts.Length < 4) return "Lỗi đọc lockfile";
+                if (parts.Length < 4) return Localization.Get("Error");
 
                 using var client = new HttpClient(new HttpClientHandler { ServerCertificateCustomValidationCallback = delegate { return true; } });
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($"riot:{parts[3]}")));
@@ -595,14 +608,14 @@ namespace RiotSwitcher
                             return $"{gameName}#{gameTag}";
                         }
                     }
-                    return "Đang tải dữ liệu...";
+                    return Localization.Get("Loading");
                 }
-                return $"Chưa đăng nhập";
+                return Localization.Get("Error");
             }
             catch (Exception ex)
             {
                 debugLog($"Lỗi GetCurrentRiotId: {ex.Message}");
-                return "Lỗi kết nối API";
+                return Localization.Get("Error");
             }
         }
 
@@ -611,7 +624,7 @@ namespace RiotSwitcher
             if (LstAccounts.SelectedItem is not AccountModel acc) return;
             BtnSelect.IsEnabled = false;
             _currentState = AppState.LoggingIn;
-            TxtStatus.Text = "Đang xử lý đăng nhập...";
+            TxtStatus.Text = Localization.Get("ProcessingLogin");
 
             await Task.Run(async () =>
             {
@@ -722,20 +735,15 @@ namespace RiotSwitcher
                 {
                     debugLog("Không tìm thấy cửa sổ Riot Client!");
                 }
-                Dispatcher.Invoke(() =>
-                {
-                    if (ChkTracker.IsChecked == true && Process.GetProcessesByName("Overwolf").Length == 0)
-                        Process.Start(@"C:\Program Files (x86)\Overwolf\OverwolfLauncher.exe", "-launchapp ipmlnnogholfmdmenfijjifldcpjoecappfccceh");
-                });
             });
-            TxtStatus.Text = "Đã đăng nhập ! Đang chờ lấy thông tin ...";
+            TxtStatus.Text = Localization.Get("LoggedInWaiting");
             await Task.Delay(400);
             BtnSelect.IsEnabled = true;
             // Thêm delay ban đầu 1 giây như ý bạn
             await Task.Delay(1000);
 
             // Vòng lặp chờ API trả về Tên (vì mạng lag có thể mất 2-5 giây)
-            string riotId = "Đang tải dữ liệu...";
+            string riotId = Localization.Get("Loading");
             for (int i = 0; i < 10; i++) // Thử tối đa 10 lần (10 giây)
             {
                 riotId = await GetCurrentRiotIdAsync();
@@ -748,7 +756,7 @@ namespace RiotSwitcher
                     SaveAccountsToFile();               // Lưu ngay xuống file JSON
                     RefreshAccountList();                 // Refresh ListView để hiển thị tên mới
                     await Task.Delay(500);
-                    TxtStatus.Text = $"Hoàn tất: {riotId}";
+                    TxtStatus.Text = Localization.Get("Completed", riotId);
                     break;
                 }
                 TxtStatus.Text = riotId;
