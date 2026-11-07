@@ -9,10 +9,11 @@ A fast, lightweight, and safe account switcher for Riot Games (Valorant / League
 * **Safe Automation via FlaUI:** Automates credential entry and clicks through official Windows UI Automation patterns. It does not tamper with game memory, inject DLLs, or hook processes, making it fully safe from Vanguard bans.
 * **Cursor Position Preservation:** Automatically caches and restores the user's cursor position (`FlaUI.Core.Input.Mouse.Position`) during programmatic clicks, eliminating cursor jumps.
 * **Stale-While-Revalidate (SWR) Caching:** Loads existing rank information immediately from local cache (`rank_cache.json`) on launch, then asynchronously refreshes expired ranks in the background.
-* **Local Credential Protection:** Passwords stored in `accounts.json` are obfuscated using a custom cryptographic pipeline (XOR cipher + reverse string + Base64 encoding) rather than stored as plaintext.
+* **Local Credential Protection:** Passwords stored in `accounts.json` are obfuscated using a custom cryptographic pipeline rather than stored as plaintext.
 * **Automatic Riot ID Resolution:** Reads active session credentials and ports directly from the Riot Client `lockfile` to resolve and update user tags (`game_name#tag`) automatically.
 * **Dynamic Rank Display:** Queries current competitive tier information and renders color-coded badges matching in-game ranks (Iron through Radiant).
-* **Companion App Integration:** Optional auto-launch trigger for external trackers (e.g., Overwolf Valorant Tracker) upon successful login.
+* **Companion App Integration:** Optional auto-launch trigger for external trackers (e.g., Overwolf Valorant Tracker) upon successful login. Coming soon
+* **Multi-language:** Change the UI language between Eng and Viet.
 * **Custom Dark Theme UI:** Features a streamlined, 5–6px transparent `ScrollBar` template with navigation buttons removed for an unobtrusive aesthetic.
 
 ---
