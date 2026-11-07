@@ -32,6 +32,9 @@
   <data name="AddAccount" xml:space="preserve">
     <value>Thêm tài khoản mới</value>
   </data>
+	<data name="AccountExists" xml:space="preserve">
+  <value>Tài khoản này đã tồn tại!</value>
+</data>
   <data name="UpdateAccount" xml:space="preserve">
     <value>Cập nhật tài khoản</value>
   </data>
@@ -99,7 +102,7 @@ Vui lòng chọn đường dẫn tới file RiotClientServices.exe của bạn.<
     <value>Lỗi</value>
   </data>
   <data name="ConfirmDelete" xml:space="preserve">
-    <value>Xóa {0}?</value>
+    <value>Xóa tài khoản: {0}?</value>
   </data>
   <data name="Confirm" xml:space="preserve">
     <value>Xác nhận</value>
@@ -111,7 +114,7 @@ Vui lòng chọn đường dẫn tới file RiotClientServices.exe của bạn.<
     <value>RIOT ACCOUNT SWITCHER</value>
   </data>
   <data name="HeaderTitle_EN" xml:space="preserve">
-    <value> Riot Account Switcher</value>
+    <value>Riot Account Switcher</value>
   </data>
   <data name="StartTracker_EN" xml:space="preserve">
     <value>Start Tracker (Overwolf)</value>
@@ -131,6 +134,9 @@ Vui lòng chọn đường dẫn tới file RiotClientServices.exe của bạn.<
   <data name="AddAccount_EN" xml:space="preserve">
     <value>Add new account</value>
   </data>
+	<data name="AccountExists_EN" xml:space="preserve">
+  <value>This account already exists!</value>
+</data>
   <data name="UpdateAccount_EN" xml:space="preserve">
     <value>Update account</value>
   </data>
@@ -198,7 +204,7 @@ Please select the path to your RiotClientServices.exe file.</value>
     <value>Error</value>
   </data>
   <data name="ConfirmDelete_EN" xml:space="preserve">
-    <value>Delete {0}?</value>
+    <value>Delete this account {0}?</value>
   </data>
   <data name="Confirm_EN" xml:space="preserve">
     <value>Confirm</value>
