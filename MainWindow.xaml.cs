@@ -10,28 +10,29 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Threading;
 using Microsoft.Win32;
 using System.Security.Principal;
 
-namespace RiotSwitcher 
+namespace RiotSwitcher
 {
     public enum AppState
     {
-        Idle,       
-        LoggingIn   
+        Idle,
+        LoggingIn
     }
+
     public class AccountModel
     {
         public string DisplayName { get; set; } = string.Empty;
         public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
-        
+
         [JsonIgnore]
         public string Rank { get; set; } = "Unranked";
         [JsonIgnore]
         public string RankColor { get; set; } = "#A6ADC8";
-
     }
 
     public class RankCacheItem
@@ -40,11 +41,10 @@ namespace RiotSwitcher
         public DateTime ExpireTime { get; set; }
     }
 
-
-
     public partial class MainWindow : System.Windows.Window
     {
         private string _riotClientPath = "";
+        private string _currentLanguage = "vi"; // Mặc định nếu chưa có cấu hình
         private const string SettingsFile = "setting.ini";
         private readonly string _lockfilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Riot Games\Riot Client\Config\lockfile");
         private readonly string _dbFilePath = "accounts.json";
@@ -68,6 +68,20 @@ namespace RiotSwitcher
             }
 
             InitializeComponent();
+
+            // Đảm bảo UI đã dựng xong hoàn toàn mới tick chọn nút theo ngôn ngữ đã lưu
+            this.Loaded += (s, e) =>
+            {
+                if (_currentLanguage.Equals("en", StringComparison.OrdinalIgnoreCase))
+                {
+                    RadEnglish.IsChecked = true;
+                }
+                else
+                {
+                    RadVietnamese.IsChecked = true;
+                }
+            };
+
             Thread.Sleep(500);
             InitializeSettings();
             LoadAccounts();
@@ -99,14 +113,20 @@ namespace RiotSwitcher
         // Nút Tắt App
         private void BtnClose_Click(object sender, RoutedEventArgs e)
         {
-            // Có thể dùng Application.Current.Shutdown(); nếu muốn diệt tận gốc mọi luồng ngầm
             Close();
+        }
+
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            SaveSettingsToFile();
+            base.OnClosing(e);
         }
 
         private void LanguageRadio_Checked(object sender, RoutedEventArgs e)
         {
             if (sender is System.Windows.Controls.RadioButton radioButton && radioButton.Tag is string language)
             {
+                _currentLanguage = language;
                 Localization.SetLanguage(language);
                 if (LblFormTitle != null)
                 {
@@ -133,33 +153,51 @@ namespace RiotSwitcher
             System.Diagnostics.Debug.WriteLine($"[DEBUG] {message}");
         }
 
-        
-
         private void InitializeSettings()
         {
-            // 1. KIỂM TRA FILE SETTING.INI ĐÃ CÓ CHƯA
+            // 1. KIỂM TRA VÀ ĐỌC FILE SETTING.INI NẾU ĐÃ CÓ
             if (File.Exists(SettingsFile))
             {
                 var lines = File.ReadAllLines(SettingsFile);
-                foreach (var line in lines)
+                foreach (var rawLine in lines)
                 {
-                    if (line.StartsWith("RiotClientPath="))
+                    var line = rawLine.Trim();
+                    if (line.StartsWith("RiotClientPath=", StringComparison.OrdinalIgnoreCase))
                     {
                         string path = line.Substring("RiotClientPath=".Length).Trim();
-                        // Nếu đường dẫn trong file có thật, lấy luôn và thoát hàm
                         if (File.Exists(path))
                         {
                             _riotClientPath = path;
-                            return;
+                        }
+                    }
+                    else if (line.StartsWith("Language=", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string lang = line.Substring("Language=".Length).Trim();
+                        if (!string.IsNullOrEmpty(lang))
+                        {
+                            _currentLanguage = lang;
                         }
                     }
                 }
+
+                Localization.SetLanguage(_currentLanguage);
+
+                if (!string.IsNullOrEmpty(_riotClientPath) && File.Exists(_riotClientPath))
+                {
+                    return;
+                }
+            }
+            else
+            {
+                // Lần đầu mở app: Mặc định là tiếng Việt
+                _currentLanguage = "vi";
+                Localization.SetLanguage(_currentLanguage);
             }
 
-            // 2. NẾU CHƯA CÓ FILE (Lần chạy đầu) -> QUÉT PROCESS XEM RIOT CÓ ĐANG MỞ KHÔNG
+            // 2. NẾU CHƯA CÓ PATH -> QUÉT PROCESS
             _riotClientPath = GetPathFromRunningProcess();
 
-            // 3. NẾU PROCESS KHÔNG CHẠY -> MỞ DIALOG BẮT NGƯỜI DÙNG CHỌN
+            // 3. NẾU PROCESS KHÔNG CHẠY -> MỞ DIALOG BẮT CHỌN
             if (string.IsNullOrEmpty(_riotClientPath) || !File.Exists(_riotClientPath))
             {
                 MessageBox.Show(Localization.Get("FirstRun"),
@@ -175,15 +213,47 @@ namespace RiotSwitcher
                 }
                 else
                 {
-                    // Nếu người dùng bấm Cancel, không cho dùng Tool nữa
                     MessageBox.Show(Localization.Get("RequiredPath"), Localization.Get("Error"), MessageBoxButton.OK, MessageBoxImage.Error);
                     System.Windows.Application.Current.Shutdown();
                     return;
                 }
             }
 
-            // 4. TẠO HOẶC GHI ĐÈ FILE SETTING.INI LƯU LẠI CHO LẦN SAU
-            File.WriteAllText(SettingsFile, $"RiotClientPath={_riotClientPath}");
+            // 4. LƯU LẠI VÀO SETTING.INI CHO LẦN SAU
+            SaveSettingsToFile();
+        }
+
+        private void SaveSettingsToFile()
+        {
+            try
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine($"RiotClientPath={_riotClientPath}");
+                sb.AppendLine($"Language={_currentLanguage}");
+                File.WriteAllText(SettingsFile, sb.ToString());
+            }
+            catch (Exception ex)
+            {
+                debugLog($"Không thể lưu setting.ini: {ex.Message}");
+            }
+        }
+
+
+        private static IEnumerable<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
+        {
+            if (depObj == null) yield break;
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
+            {
+                DependencyObject child = VisualTreeHelper.GetChild(depObj, i);
+                if (child is T match)
+                {
+                    yield return match;
+                }
+                foreach (T childOfChild in FindVisualChildren<T>(child))
+                {
+                    yield return childOfChild;
+                }
+            }
         }
 
         // Hàm hỗ trợ: Trích xuất đường dẫn từ Process đang chạy
@@ -191,17 +261,14 @@ namespace RiotSwitcher
         {
             try
             {
-                // Tìm tất cả các tiến trình có tên "RiotClientServices"
                 var processes = Process.GetProcessesByName("RiotClientServices");
                 if (processes.Length > 0)
                 {
-                    // Lấy đường dẫn của tiến trình đầu tiên tìm thấy
                     return processes[0].MainModule.FileName;
                 }
             }
             catch (Exception ex)
             {
-                // Bỏ qua lỗi nếu Tool không có quyền (Admin) để đọc Process của Windows
                 debugLog($"Không thể lấy đường dẫn từ process: {ex.Message}");
             }
             return null;
@@ -210,11 +277,9 @@ namespace RiotSwitcher
         [DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
 
-        // Kiểm tra xem cửa sổ có đang bị Minimize không
         [DllImport("user32.dll")]
         private static extern bool IsIconic(IntPtr hWnd);
 
-        // Hàm hiển thị / Restore cửa sổ
         [DllImport("user32.dll")]
         private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
         private const int SW_RESTORE = 9;
@@ -236,7 +301,6 @@ namespace RiotSwitcher
         {
             LoadRankCache();
 
-            // BƯỚC 1: LẤY TỪ CACHE RA ĐỌC TRƯỚC (HIỆN NGAY LẬP TỨC TRONG 1ms)
             foreach (var acc in _accounts)
             {
                 if (!acc.DisplayName.Contains("#"))
@@ -260,19 +324,16 @@ namespace RiotSwitcher
 
             LstAccounts.Items.Refresh();
 
-            // BƯỚC 2: CHẠY NGẦM ĐỂ CẬP NHẬT RANK TỪ API KHI HẾT HẠN
             bool hasUpdate = false;
             foreach (var acc in _accounts)
             {
                 if (!acc.DisplayName.Contains("#")) continue;
 
-                // Nếu cache vẫn còn hạn (Expire > DateTime.Now) thì BỎ QUA
                 if (_rankCache.TryGetValue(acc.DisplayName, out var cachedData) && DateTime.Now < cachedData.ExpireTime)
                 {
                     continue;
                 }
 
-                // Cache hết hạn hoặc chưa có cache -> Mới gọi API
                 string newRank = await GetRankFromTrackerAsync(acc.DisplayName);
 
                 if (acc.Rank != newRank)
@@ -280,7 +341,7 @@ namespace RiotSwitcher
                     acc.Rank = newRank;
                     acc.RankColor = GetRankColor(newRank);
                     hasUpdate = true;
-                    LstAccounts.Items.Refresh(); // Cập nhật từng dòng khi có rank mới
+                    LstAccounts.Items.Refresh();
                 }
             }
 
@@ -290,7 +351,6 @@ namespace RiotSwitcher
             }
         }
 
-        // Tách hàm lấy màu rank ra riêng cho gọn code
         private string GetRankColor(string currentRank)
         {
             if (currentRank.Contains("Iron") || currentRank.Contains("Bronze") || currentRank.Contains("Silver"))
@@ -335,7 +395,6 @@ namespace RiotSwitcher
 
         private async Task<string> GetRankFromTrackerAsync(string riotId)
         {
-            // 1. CACHE 30 PHÚT
             if (_rankCache.TryGetValue(riotId, out var cachedData))
             {
                 if (DateTime.Now < cachedData.ExpireTime)
@@ -349,10 +408,9 @@ namespace RiotSwitcher
             string name = parts[0];
             string tag = parts[1];
             string finalRank = "Unranked";
-            await Task.Delay(1000); // Delay 1.0 giây để tránh spam API quá nhanh
+            await Task.Delay(1000);
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "RiotAccountSwitcher_Project");
 
-            // 2. LỚP 1: GỌI KYROSKOH (Nhanh, không cần Key)
             try
             {
                 string urlKyros = $"https://api.kyroskoh.xyz/valorant/v1/mmr/ap/{name}/{tag}?show=rankonly&display=0";
@@ -366,42 +424,16 @@ namespace RiotSwitcher
                     if (!cleanRank.Contains("API Error") && !cleanRank.ToLower().Contains("error") && !string.IsNullOrEmpty(cleanRank))
                     {
                         finalRank = cleanRank;
-                        goto SaveAndReturn; // Nếu KyrosKoh ngon lành, nhảy thẳng xuống lưu Cache
+                        goto SaveAndReturn;
                     }
                 }
             }
             catch { finalRank = "Busy"; }
 
-            //// 3. LỚP 2: FALLBACK VỀ HENRIKDEV NẾU KYROSKOH SẬP
-            //try
-            //{
-            //    string urlHenrik = $"https://api.henrikdev.xyz/valorant/v1/mmr/ap/{name}/{tag}";
-
-            //    // Ép thêm Header API Key cho HenrikDev
-            //    // CHÚ Ý: Điền API Key của bác vào đây
-            //    client.DefaultRequestHeaders.Add("Authorization", "HDEV-NHAP_API_KEY_CUA_BAC_VAO_DAY");
-
-            //    var resHenrik = await client.GetAsync(urlHenrik);
-            //    if (resHenrik.IsSuccessStatusCode)
-            //    {
-            //        string json = await resHenrik.Content.ReadAsStringAsync();
-            //        using JsonDocument doc = JsonDocument.Parse(json);
-
-            //        string rankValue = doc.RootElement.GetProperty("data").GetProperty("currenttierpatched").GetString();
-            //        finalRank = string.IsNullOrEmpty(rankValue) ? "Unranked" : rankValue;
-            //    }
-            //    else
-            //    {
-            //        finalRank = $"Lỗi API ({resHenrik.StatusCode})";
-            //    }
-            //}
-            //catch { finalRank = "Máy chủ bận"; }
-
-            SaveAndReturn:
-            // 4. LƯU XUỐNG KHO (CACHE 30 PHÚT) RỒI TRẢ VỀ CHO GIAO DIỆN
+        SaveAndReturn:
             if (finalRank == "Unranked" || finalRank == "Busy" || finalRank.StartsWith("Lỗi") || finalRank.Contains("API Error"))
             {
-                // Nếu là Unranked hoặc lỗi thì không lưu vào cache, để lần sau vẫn thử lại
+                // Bỏ qua không lưu cache
             }
             else
             {
@@ -411,30 +443,26 @@ namespace RiotSwitcher
                     ExpireTime = DateTime.Now.AddHours(1)
                 };
                 SaveRankCache();
-             }
+            }
             return finalRank;
         }
 
         public static class CryptoHelper
         {
-            // Chìa khóa bí mật dùng để XOR
             private const string SecretKey = "riotShuAkashi";
 
             public static string Encrypt(string plainText)
             {
                 if (string.IsNullOrEmpty(plainText)) return string.Empty;
 
-                // Bước 1: Mã hóa XOR từng ký tự với khóa bí mật
                 char[] xorResult = new char[plainText.Length];
                 for (int i = 0; i < plainText.Length; i++)
                 {
                     xorResult[i] = (char)(plainText[i] ^ SecretKey[i % SecretKey.Length]);
                 }
 
-                // Bước 2: Đảo ngược thứ tự chuỗi để làm rối thêm
                 Array.Reverse(xorResult);
 
-                // Bước 3: Bọc lại bằng Base64 cho đẹp file JSON
                 byte[] bytes = Encoding.UTF8.GetBytes(new string(xorResult));
                 return Convert.ToBase64String(bytes);
             }
@@ -444,7 +472,6 @@ namespace RiotSwitcher
                 if (string.IsNullOrEmpty(encodedText)) return string.Empty;
                 try
                 {
-                    
                     byte[] bytes = Convert.FromBase64String(encodedText);
                     char[] chars = Encoding.UTF8.GetString(bytes).ToCharArray();
 
@@ -495,20 +522,16 @@ namespace RiotSwitcher
 
             if (_isEditing)
             {
-                // Lúc Edit, lấy thẳng account đang được chọn trên List để sửa cho an toàn
                 if (LstAccounts.SelectedItem is AccountModel acc)
                 {
                     acc.Username = TxtUsername.Text;
                     acc.Password = CryptoHelper.Encrypt(TxtPassword.Password);
-                    // DisplayName giữ nguyên, không đổi
                 }
             }
             else
             {
-                // Lấy tạm Username làm DisplayName lúc mới tạo
                 string tempDisplayName = TxtUsername.Text;
 
-                // Check trùng
                 if (_accounts.Any(a => a.DisplayName.Equals(tempDisplayName, StringComparison.OrdinalIgnoreCase)))
                     return;
 
@@ -521,7 +544,7 @@ namespace RiotSwitcher
             }
 
             SaveAccountsToFile();
-            RefreshAccountList();       
+            RefreshAccountList();
         }
 
         private void BtnEdit_Click(object sender, RoutedEventArgs e)
@@ -552,7 +575,6 @@ namespace RiotSwitcher
             if (!File.Exists(_lockfilePath)) return false;
             try
             {
-                // Sửa lỗi IOException: Đọc ké lockfile bằng FileShare.ReadWrite
                 using var fs = new FileStream(_lockfilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 using var sr = new StreamReader(fs);
                 string lockContent = await sr.ReadToEndAsync();
@@ -574,7 +596,6 @@ namespace RiotSwitcher
             if (!File.Exists(_lockfilePath)) return Localization.Get("WaitingRiotClient");
             try
             {
-                // Vẫn bài cũ: Đọc ké lockfile để lấy Port và Password
                 using var fs = new FileStream(_lockfilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 using var sr = new StreamReader(fs);
                 string lockContent = await sr.ReadToEndAsync();
@@ -585,14 +606,12 @@ namespace RiotSwitcher
                 using var client = new HttpClient(new HttpClientHandler { ServerCertificateCustomValidationCallback = delegate { return true; } });
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($"riot:{parts[3]}")));
 
-                // Gọi API
                 var res = await client.GetAsync($"https://127.0.0.1:{parts[2]}/chat/v1/session");
 
                 if (res.IsSuccessStatusCode)
                 {
                     string json = await res.Content.ReadAsStringAsync();
 
-                    // Bóc tách JSON để lấy name và tag
                     using JsonDocument doc = JsonDocument.Parse(json);
                     var root = doc.RootElement;
 
@@ -628,29 +647,23 @@ namespace RiotSwitcher
 
             await Task.Run(async () =>
             {
-                // Đóng Valorant
                 foreach (var p in Process.GetProcessesByName("VALORANT").Concat(Process.GetProcessesByName("VALORANT-Win64-Shipping"))) p.Kill();
                 await Task.Delay(1000);
 
-                // Logout Riot Client ngầm
                 await RiotApiLogoutAsync();
                 await Task.Delay(1000);
 
-                // Mở Riot Client nếu chưa chạy
                 if (Process.GetProcessesByName("RiotClientServices").Length == 0)
                 {
                     Process.Start(new ProcessStartInfo { FileName = _riotClientPath, UseShellExecute = true });
                 }
-                
-                // FLAUI: Inject Account
+
                 using var automation = new UIA3Automation();
                 FlaUI.Core.AutomationElements.Window? riotWindow = null;
-                for (int i = 0; i < 20; i++) // Timeout 20s
+                for (int i = 0; i < 20; i++)
                 {
                     try
                     {
-                        // CÁCH MỚI: Tìm thẳng trên Desktop cửa sổ có tên "Riot Client"
-                        // Không phụ thuộc vào PID hay tên file .exe nữa
                         var desktop = automation.GetDesktop();
                         riotWindow = desktop.FindFirstChild(cf => cf.ByName("Riot Client"))?.AsWindow();
 
@@ -667,19 +680,16 @@ namespace RiotSwitcher
 
                     for (int j = 0; j < 10; j++)
                     {
-                        // 1. Nếu cửa sổ đang bị thu nhỏ (Minimize), ép bung nó lên (Restore)
                         if (IsIconic(riotHandle))
                         {
                             debugLog("Cửa sổ đang bị ẩn dưới Taskbar, tiến hành Restore...");
                             ShowWindow(riotHandle, SW_RESTORE);
-                            await Task.Delay(500); // Chờ 1 chút cho animation của Windows chạy xong
+                            await Task.Delay(500);
                         }
 
-                        // 2. Ép nó lên trên cùng
                         riotWindow.SetForeground();
                         await Task.Delay(500);
 
-                        // 3. Kiểm tra xem đã thực sự nổi lên và KHÔNG BỊ MINIMIZE chưa
                         if (GetForegroundWindow() == riotHandle && !IsIconic(riotHandle))
                         {
                             isFocused = true;
@@ -691,7 +701,6 @@ namespace RiotSwitcher
 
                     if (isFocused)
                     {
-
                         var userBox = riotWindow.FindFirstDescendant(cf => cf.ByAutomationId("username"))?.AsTextBox();
                         for (int i = 0; i < 20; i++)
                         {
@@ -714,7 +723,6 @@ namespace RiotSwitcher
                             userBox.Focus();
                             await Task.Delay(500);
                             userBox.Text = acc.Username;
-                            //FlaUI.Core.Input.Keyboard.Press(FlaUI.Core.WindowsAPI.VirtualKeyShort.TAB);
                             await Task.Delay(200);
                             passBox.Focus();
                             passBox.Text = realPassword;
@@ -723,7 +731,6 @@ namespace RiotSwitcher
                             loginBtn.Click();
                             FlaUI.Core.Input.Mouse.Position = originalCursorPos;
                             await Task.Delay(150);
-
                         }
                     }
                     else
@@ -736,25 +743,22 @@ namespace RiotSwitcher
                     debugLog("Không tìm thấy cửa sổ Riot Client!");
                 }
             });
+
             TxtStatus.Text = Localization.Get("LoggedInWaiting");
             await Task.Delay(400);
             BtnSelect.IsEnabled = true;
-            // Thêm delay ban đầu 1 giây như ý bạn
             await Task.Delay(1000);
 
-            // Vòng lặp chờ API trả về Tên (vì mạng lag có thể mất 2-5 giây)
             string riotId = Localization.Get("Loading");
-            for (int i = 0; i < 10; i++) // Thử tối đa 10 lần (10 giây)
+            for (int i = 0; i < 10; i++)
             {
                 riotId = await GetCurrentRiotIdAsync();
 
-                // Nếu lấy được tên (không phải báo lỗi hay đang tải) thì thoát vòng lặp
                 if (riotId.Contains("#"))
                 {
-                    // --- THÊM CHÍNH XÁC VÀO ĐÂY ---
-                    acc.DisplayName = riotId;     // Đổi tên biến acc đang chọn
-                    SaveAccountsToFile();               // Lưu ngay xuống file JSON
-                    RefreshAccountList();                 // Refresh ListView để hiển thị tên mới
+                    acc.DisplayName = riotId;
+                    SaveAccountsToFile();
+                    RefreshAccountList();
                     await Task.Delay(500);
                     TxtStatus.Text = Localization.Get("Completed", riotId);
                     break;
@@ -762,10 +766,9 @@ namespace RiotSwitcher
                 TxtStatus.Text = riotId;
 
                 debugLog($"Chưa lấy được tên (thử lại lần {i + 1}/10)...");
-                await Task.Delay(1000); // Mỗi lần check cách nhau 1 giây
-            }            
+                await Task.Delay(1000);
+            }
 
-            // Chờ 3 giây để người dùng ngắm cái tên rồi mới mở lại Timer quét tiến trình
             await Task.Delay(3000);
             _currentState = AppState.Idle;
         }

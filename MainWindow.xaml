@@ -242,8 +242,8 @@
                      </StackPanel>
                      <Border Background="#1E1E2E" BorderBrush="#313244" BorderThickness="1" CornerRadius="7" Padding="2" HorizontalAlignment="Right" VerticalAlignment="Center">
                          <StackPanel Orientation="Horizontal">
-                             <RadioButton Content="VI" Tag="vi-VN" IsChecked="True" Style="{StaticResource LanguageToggleButton}" Checked="LanguageRadio_Checked" x:Name="RadVietnamese"/>
-                             <RadioButton Content="EN" Tag="en-US" Style="{StaticResource LanguageToggleButton}" Checked="LanguageRadio_Checked" x:Name="RadEnglish"/>
+                             <RadioButton Content="VI" Tag="vi" IsChecked="True" Style="{StaticResource LanguageToggleButton}" Checked="LanguageRadio_Checked" x:Name="RadVietnamese"/>
+                             <RadioButton Content="EN" Tag="en" Style="{StaticResource LanguageToggleButton}" Checked="LanguageRadio_Checked" x:Name="RadEnglish"/>
                          </StackPanel>
                      </Border>
                 </DockPanel>
