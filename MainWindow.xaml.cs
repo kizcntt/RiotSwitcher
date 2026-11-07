@@ -517,24 +517,38 @@ namespace RiotSwitcher
 
         private void BtnSave_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(TxtUsername.Text) || string.IsNullOrWhiteSpace(TxtPassword.Password))
+            // 1. Username luôn bắt buộc; Password chỉ bắt buộc khi THÊM MỚI
+            if (string.IsNullOrWhiteSpace(TxtUsername.Text))
+                return;
+
+            if (!_isEditing && string.IsNullOrWhiteSpace(TxtPassword.Password))
                 return;
 
             if (_isEditing)
             {
                 if (LstAccounts.SelectedItem is AccountModel acc)
                 {
+                    if (_accounts.Any(a => a != acc && a.Username.Equals(TxtUsername.Text, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        MessageBox.Show(Localization.Get("AccountExists"), "Error: Can't import data", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
                     acc.Username = TxtUsername.Text;
-                    acc.Password = CryptoHelper.Encrypt(TxtPassword.Password);
+                    // 2. Chỉ đổi mật khẩu khi người dùng có gõ mật khẩu mới
+                    if (!string.IsNullOrWhiteSpace(TxtPassword.Password))
+                    {
+                        acc.Password = CryptoHelper.Encrypt(TxtPassword.Password);
+                    }
                 }
             }
             else
             {
                 string tempDisplayName = TxtUsername.Text;
-
-                if (_accounts.Any(a => a.DisplayName.Equals(tempDisplayName, StringComparison.OrdinalIgnoreCase)))
+                if (_accounts.Any(a => a.Username.Equals(tempDisplayName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    MessageBox.Show(Localization.Get("AccountExists"), "Error: Can't import data", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
-
+                }
                 _accounts.Add(new AccountModel
                 {
                     DisplayName = tempDisplayName,
@@ -554,7 +568,7 @@ namespace RiotSwitcher
                 TxtDisplayName.Text = acc.DisplayName;
                 TxtDisplayName.IsEnabled = false;
                 TxtUsername.Text = acc.Username;
-                TxtPassword.Password = CryptoHelper.Decrypt(acc.Password);
+                TxtPassword.Password = "";
                 _isEditing = true;
                 LblFormTitle.Text = Localization.Get("UpdateAccount");
             }
